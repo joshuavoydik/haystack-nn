@@ -1,11 +1,10 @@
-'''
 import torch
 from PIL import Image
 from torch import nn, save, load
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torchvision import datasets
-from torchvision.transforms import ToTensor
+from torchvision import datasets, transforms
+from torchvision.transforms import ToTensor, Resize
 
 # Get data
 train = datasets.MNIST(root="data", download=True, train=True, transform=ToTensor())
@@ -50,14 +49,30 @@ if __name__ == "__main__":
 
         print(f"Epoch:{epoch} loss is {loss.item()}")
 
-    with open('model_state.pt', 'wb') as f:
-        save(clf.state_dict(), f)
+    # Save the model's state_dict
+    torch.save(clf.state_dict(), 'model_state.pt')
 
-    with open('model_state.pt', 'rb') as f:
-        clf.load_state_dict(load(f))
+    # Switch to eval mode for inference
+    clf.eval()
 
+    # Load and process the image
     img = Image.open('img_3.jpg')
-    img_tensor = ToTensor()(img).unsqueeze(0)
 
-    print(torch.argmax(clf(img_tensor)))
-'''
+    # Define a transform pipeline
+    transform = transforms.Compose([
+        Resize((28,28)),
+        transforms.Grayscale(num_output_channels=1),
+        ToTensor()
+    ])
+
+    # Apply the transform to the image
+    img_tensor = transform(img).unsqueeze(0)
+
+    # Apply the model to the image tensor
+    output = clf(img_tensor)
+
+    # Get the predicted class
+    predicted_class = torch.argmax(output)
+
+    # Print the predicted class
+    print(predicted_class)
